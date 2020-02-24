@@ -1,4 +1,12 @@
-class ActiveUser:
+import sys
+
+from aiovast.requests import VastSession
+
+from double_click import echo
+
+
+class User:
+    login_route = None
 
     def __init__(self, username: str = None, access_dict: dict = {}, **kwargs):
         """
@@ -77,7 +85,7 @@ class ActiveUser:
             elif key_hits == 1:
                 access.pop(key_hits[0])
             else:
-                raise ValueError(f'Invalid access structure. {self.username} hit on both {access}')
+                raise ValueError(f'Invalid access structure. {self.username} hit on multiple keys {key_hits}')
 
         auth_list = []
         for key, list_val in access.items():
@@ -89,3 +97,21 @@ class ActiveUser:
             return all(authed in requires for authed in auth_list)
         else:
             return any(authed in requires for authed in auth_list)
+
+    def authenticate(self, **kwargs):
+        echo('#Authentication was not implemented for this instance, shutting down')
+        sys.exit(1)
+
+
+class UserSession(VastSession):
+    user: User  # Define a class that inherits from UserSession to set a default active user
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', self.user)
+        kwargs['disable_progress_bar'] = kwargs.get('disable_progress_bar', False)
+
+        super().__init__(*args, **kwargs)
+
+    def refresh_token(self):
+        self.user.authenticate()
+
