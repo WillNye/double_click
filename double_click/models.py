@@ -76,10 +76,20 @@ class Model:
             return cls(**kwargs)._content
 
     @classmethod
-    def get(cls, key, **kwargs):
+    def get_object(cls, key, **kwargs):
         model = cls(**kwargs)
         model._dict_ref = model._options_dict.get(key)
-        return
+        for key, value in model.to_dict().items():
+            setattr(model, key, value)
+
+        return model
+
+    def get(self, attr, default=None):
+        val = getattr(self, attr, default)
+        if val == default and not isinstance(default, None):
+            setattr(self, attr, default)
+
+        return val
 
     def to_dict(self):
         return self._dict_ref

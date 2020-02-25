@@ -6,7 +6,6 @@ from double_click import echo
 
 
 class User:
-    login_route = None
 
     def __init__(self, username: str = None, access_dict: dict = {}, **kwargs):
         """
@@ -32,6 +31,19 @@ class User:
         :return: dict
         """
         return self._access_dict
+
+    def get(self, attr, default=None):
+        """Retrieves the attr value from the instance of the class, setting default if not exists.
+
+        :param attr:
+        :param default:
+        :return: self.attr
+        """
+        val = getattr(self, attr, default)
+        if val == default and default is None:
+            setattr(self, attr, default)
+
+        return val
 
     def update_access(self, access_dict):
         self._access_dict = access_dict
