@@ -3,9 +3,7 @@ import math
 import os
 from datetime import datetime as dt, timedelta
 
-from aiovast.requests import VastSession
-
-from double_click.user import UserSession
+from double_click.request import GeneralSession, UserSession
 
 
 class Model:
@@ -21,8 +19,8 @@ class Model:
         self.session = kwargs.get('session', self.session)
         self.url = kwargs.get('url', self.url)
 
-        if not isinstance(self.session, UserSession) and not isinstance(self.session, VastSession):
-            self.session = VastSession(disable_progress_bar=False)
+        if not isinstance(self.session, UserSession) and not isinstance(self.session, GeneralSession):
+            self.session = GeneralSession()
 
         if self._file_path:
             min_age = dt.now() - timedelta(minutes=self._ttl)
@@ -71,7 +69,7 @@ class Model:
     @classmethod
     def all(cls, as_dict: bool = False, **kwargs):
         if not as_dict:
-            pass
+            pass  # ToDo: Maybe make the objects nested to support this access pattern
         else:
             return cls(**kwargs)._content
 
