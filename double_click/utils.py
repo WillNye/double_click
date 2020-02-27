@@ -29,7 +29,10 @@ def echo(output):
                 f"> {output.url} - {output.text}"
             click.echo(mdv(md=err, theme=CLI_THEME, c_theme=CLI_THEME))
         elif output.status_code in [200, 201]:
-            click.echo(json.dumps(output.json(), indent=4))
+            try:
+                click.echo(json.dumps(output.json(), indent=4))
+            except json.decoder.JSONDecodeError:
+                click.echo(output.text)
         elif output.status_code in [401, 403]:
             click.echo(mdv(md="#You do not have permissions to view this resource", theme=CLI_THEME, c_theme=CLI_THEME))
         elif output.status_code == 404:

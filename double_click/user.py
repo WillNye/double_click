@@ -1,10 +1,3 @@
-import sys
-
-from aiovast.requests import VastSession
-
-from double_click import echo
-
-
 class User:
 
     def __init__(self, username: str = None, access_dict: dict = {}, **kwargs):
@@ -111,19 +104,5 @@ class User:
             return any(authed in requires for authed in auth_list)
 
     def authenticate(self, **kwargs):
-        echo('#Authentication was not implemented for this instance, shutting down')
-        sys.exit(1)
-
-
-class UserSession(VastSession):
-    user: User  # Define a class that inherits from UserSession to set a default active user
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', self.user)
-        kwargs['disable_progress_bar'] = kwargs.get('disable_progress_bar', False)
-
-        super().__init__(*args, **kwargs)
-
-    def refresh_token(self):
-        self.user.authenticate()
+        raise NotImplementedError
 
