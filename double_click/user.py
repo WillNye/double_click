@@ -7,7 +7,7 @@ class User:
         For example, the way you would auth using permissions is different in these two access_dict structures:
             dict(service=dict(svc_name=dict(list(roles), list(permissions))))
             dict(service=dict(svc_name=dict(role=dict(role_name=list(permissions)))))
-        
+
         :param username:
         :param access_dict:
         :param kwargs:
@@ -41,14 +41,14 @@ class User:
     def update_access(self, access_dict):
         self._access_dict = access_dict
 
-    def hide(self, required_roles: list = None, requires_all: bool = False):
+    def hide(self, requires: list = None, match_all: bool = False, **kwargs):
         """Used for click.command(hidden=this.hide) or click.
 
-        :param required_roles: list of roles that a user must have one or more of
-        :param requires_all: (default: False) If true a user must have all roles passed in required_roles
+        :param requires: list of roles that a user must have one or more of
+        :param match_all: (default: False) If true a user must have all roles passed in required_roles
         :return: bool
         """
-        return not self.has_access(required_roles, requires_all)
+        return not self.has_access(requires, match_all, **kwargs)
 
     def has_access(self, requires: list = None, match_all: bool = False, **kwargs):
         """Overwrite this for custom authorization
@@ -79,26 +79,23 @@ class User:
         :return: bool
         """
         access = self.access
-
-        if requires is None:
+        if kwargs is None and requires is None:
             return True
 
-        while kwargs:
+        while kwargs:  # Walk user access by mapping kwarg keys to current depth of user.access
             key_hits = [key for key in kwargs.keys() if key in access.keys()]
-            if key_hits == 0:
+            if len(key_hits) == 0:
                 return False
-            elif key_hits == 1:
-                access.pop(key_hits[0])
+            elif len(key_hits) == 1:
+                access = access[key_hits[0]][kwargs.pop(key_hits[0])]
             else:
                 raise ValueError(f'Invalid access structure. {self.username} hit on multiple keys {key_hits}')
 
-        auth_list = []
-        for key, list_val in access.items():
-            auth_list.append(key)
-            if isinstance(list_val, list):
-                auth_list.append(list_val)
+        auth_list = [k for k in access.keys()]
 
-        if match_all:
+        if requires is None:
+            return True
+        elif match_all:
             return all(authed in requires for authed in auth_list)
         else:
             return any(authed in requires for authed in auth_list)
