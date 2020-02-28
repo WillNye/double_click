@@ -77,14 +77,14 @@ class GeneralSession(requests.Session):
 
         return formatted_requests
 
-    def auth_refresh(self):
+    def refresh_auth(self):
         """Use this to add to verify auth is still valid or refresh if out of date.
 
         :return:
         """
         pass
 
-    def _make_request(self, request_call, url, **request_kwargs) -> requests.Response:
+    def _make_request(self, request_call, url, retry=True, **request_kwargs) -> requests.Response:
         """Makes an http request, suppress errors and include content.
 
         :param session_call: URL the POST request will be made.
@@ -93,7 +93,10 @@ class GeneralSession(requests.Session):
         try:
             response = request_call(url, **request_kwargs)
             if response.status_code == 401:  # Fingers crossed the API has proper status codes
-                self.auth_refresh()
+                self.refresh_auth()
+                if retry:
+                    return self._make_request(request_call, url, retry=False, **request_kwargs)
+
             return response
 
         except Exception as e:
@@ -103,6 +106,7 @@ class GeneralSession(requests.Session):
                 response = requests.Response()
                 response.url = url
                 response._content = str(e).encode('utf-8')
+                response.status_code = 666
                 return response
 
     def _bulk(self, call, request_list: list, loop=asyncio.get_event_loop(), **kwargs) -> list:
@@ -186,7 +190,9 @@ class UserSession(GeneralSession):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', self.user)
+        kwargs['disable_progress_bar'] = kwargs.get('disable_progress_bar', False)
+
         super().__init__(*args, **kwargs)
 
-    def auth_refresh(self):
+    def refresh_auth(self):
         self.user.authenticate()
