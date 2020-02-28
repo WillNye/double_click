@@ -4,96 +4,123 @@ import os
 from datetime import datetime as dt, timedelta
 
 from double_click.request import GeneralSession, UserSession
-
+    
 
 class Model:
-    # This could be a double_click.UserSession, requests.Session, or aiovast.requests.VastSession obj
-    session = None  # Define a class that inherits from Model to set a default session type
+    # This could be a double_click.UserSession or double_click.GeneralSession object
+    session: GeneralSession = None  # Define a class that inherits from Model to set a default session type
     url: str = None
 
     def __init__(self, **kwargs):
-        self._options_dict = {}
-        self._choice_list = []
-        self._content = []
-        self._dict_ref = {}
-        self.session = kwargs.get('session', self.session)
-        self.url = kwargs.get('url', self.url)
-
+        self.url = kwargs.pop('url', self.url)
+        self.session = kwargs.pop('session', self.session)
         if not isinstance(self.session, UserSession) and not isinstance(self.session, GeneralSession):
-            self.session = GeneralSession()
+            self.session = GeneralSession(disable_progress_bar=False)
 
-        if self._file_path:
-            min_age = dt.now() - timedelta(minutes=self._ttl)
-            if not os.path.exists(self._file_path) or dt.fromtimestamp(os.path.getmtime(self._file_path)) < min_age:
-                self.update()
-            else:
-                with open(self._file_path) as config:
-                    self._content = json.loads(config.read())
-                    self._set()
-        else:
-            self.update()
+        self._as_dict = kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
-    def _ttl(self):
+    def ttl(self):
         """Time to live. The local file cache will be refreshed after this number, in minutes, has passed.
         """
         return 120
 
     @property
-    def _file_path(self):
+    def file_path(self):
         """Location where the http response is stored locally. If none, response will not be stored.
         """
         return None
 
     @property
-    def _key_identifier(self):
+    def key_identifier(self):
         """The dictionary key to use for grouping the objects by, e.g. name.
         """
         raise NotImplementedError
 
     @property
-    def _requires_roles(self) -> tuple:
+    def requires(self) -> tuple:
         """The roles required to view the resource and if all roles are required.
 
         tuple[0] = required_roles
         tuple[1] = User must have all roles within required_roles if True
+        tuple[2] = Passed as kwargs, operating similar to User.has_access
 
-        Default is None, False which means no auth.
+        Default is None, False, {} which means no auth.
         """
-        return None, False
+        return None, False, {}
+
+    @property
+    def as_dict(self):
+        return self._as_dict
 
     @classmethod
-    def choices(cls, **kwargs):
-        return cls(**kwargs)._choice_list
+    def _with_content(cls, **kwargs) -> dict:
+        """Retrieves data from cache or API to be used object_* classmethods
 
-    @classmethod
-    def all(cls, as_dict: bool = False, **kwargs):
-        if not as_dict:
-            pass  # ToDo: Maybe make the objects nested to support this access pattern
-        else:
-            return cls(**kwargs)._content
-
-    @classmethod
-    def get_object(cls, key, **kwargs):
+        :param kwargs:
+        :return: dict
+        """
         model = cls(**kwargs)
-        model._dict_ref = model._options_dict.get(key)
-        for key, value in model.to_dict().items():
-            setattr(model, key, value)
+        min_age = dt.now() - timedelta(minutes=model.ttl)
+        if not os.path.exists(model.file_path) or dt.fromtimestamp(os.path.getmtime(model.file_path)) < min_age:
+            return model._api_retrieve()
+        else:
+            with open(model.file_path) as config:
+                return json.loads(config.read())
 
-        return model
+    @classmethod
+    def objects_keys(cls, **kwargs) -> list:
+        """Returns a list of values, primarily used for passing in click.Choice(Model.objects_keys())
+
+        :param kwargs:
+        :return: list
+        """
+        content = cls._with_content(**kwargs)
+        model = cls(**kwargs)
+        return [item.get(model.key_identifier) for item in content]
+
+    @classmethod
+    def objects_all(cls, as_dict: bool = False, **kwargs):
+        """Returns all hits as a list of Model objects or dict(key_identifier=item_as_dict).
+
+        :param as_dict: If true (default False), the response will be a dict instead of a list of models
+        :param kwargs:
+        :return:
+        """
+        content = cls._with_content(**kwargs)
+        if as_dict:
+            model = cls(**kwargs)
+            return {item.get(model.key_identifier): item for item in content}
+        else:
+            return [cls(**{**model, **kwargs}) for model in content]
+
+    @classmethod
+    def objects_get(cls, key, **kwargs):
+        """Returns a Model object matching the provided key.
+
+        :param key:
+        :param kwargs:
+        :return: cls
+        """
+        model = cls.objects_all(as_dict=True)
+        return cls(**{**model.get(key), **kwargs})
 
     def get(self, attr, default=None):
-        val = getattr(self, attr, default)
-        if val == default and not isinstance(default, None):
-            setattr(self, attr, default)
+        """Perform a safe lookup on an instance of the Model with the ability to provide a default if attr not set.
 
+        :param attr:
+        :param default:
+        :return:
+        """
+        val = getattr(self, attr, default)
+        if val == default and default is not None:
+            setattr(self, attr, default)
         return val
 
-    def to_dict(self):
-        return self._dict_ref
-
-    def _api_get(self):
-        """Protected method to retrieve the objects
+    def _api_retrieve(self):
+        """Protected method to retrieve and all Model objects. Used within Model.objects.refresh
         :return: list(requests.Response)
         """
         page = 1
@@ -108,8 +135,7 @@ class Model:
         if len(results) < count:
             remaining_pages = math.ceil(count/len(results)) + 2  # account for 1 indexed val with page 1 complete
             request_list = [(self.url, dict(params=dict(page=page))) for page in range(2, remaining_pages)]
-            responses = self.session.get_request(request_list)
-
+            responses = self.session.bulk_get(request_list)
             for response in responses:
                 if response.status_code < 400:
                     content = response.json()
@@ -117,27 +143,20 @@ class Model:
 
         return results
 
-    def _set(self):
-        """Sets _choice_list and _options_dict by grouping content using the _key_identifier
+    def refresh(self):
+        """Syncs the local file with the service
         """
-        for item in self.all(as_dict=True):
-            self._choice_list.append(item.get(self._key_identifier))
-            self._options_dict[item.get(self._key_identifier)] = item
-
-    def update(self):
-        """Overwrite this for custom authorization
-        """
-        if not self.session.user.has_access(*self._requires_roles):
+        kwargs = self.requires[2] if len(self.requires) > 2 and isinstance(self.requires[2], dict) else {}
+        if isinstance(self.session, UserSession) and not self.session.user.has_access(requires=list(self.requires[0]),
+                                                                                      match_all=bool(self.requires[1]),
+                                                                                      **kwargs):
             return False
 
-        content = self._api_get()
-        self._content = content if len(content) > 0 else self._content
-        self._set()
+        content = self._api_retrieve()
+        if content and self.file_path:
+            os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+            with open(self.file_path, 'w') as config:
+                config.write(json.dumps(content, indent=4))
 
-        if self._file_path:
-            os.makedirs(os.path.dirname(self._file_path), exist_ok=True)
-            with open(self._file_path, 'w') as config:
-                config.write(json.dumps(self.list, indent=4))
-
-
+        return content
 
