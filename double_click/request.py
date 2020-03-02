@@ -195,4 +195,4 @@ class UserSession(GeneralSession):
         super().__init__(*args, **kwargs)
 
     def refresh_auth(self):
-        self.user.authenticate()
+        self.headers.update(self.user.authenticate())

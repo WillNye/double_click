@@ -1,6 +1,6 @@
 class User:
 
-    def __init__(self, username: str = None, access_dict: dict = {}, **kwargs):
+    def __init__(self, username: str = None, access: dict = {}, **kwargs):
         """
         !access_dict structure matters, it will impact the response of ActiveUser.has_access!
         This allows dynamic resolution to help support as many authorization models as possible.
@@ -13,17 +13,24 @@ class User:
         :param kwargs:
         """
         self.username = username
-        self._access_dict = access_dict
+        self.access = access
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     @property
-    def access(self):
+    def access(self) -> dict:
         """
         :return: dict
         """
         return self._access_dict
+
+    @access.setter
+    def access(self, access_dict):
+        if isinstance(access_dict, dict):
+            self._access_dict = access_dict
+        else:
+            raise ValueError(f'access attribute must be of type dict not {type(access_dict)}')
 
     def get(self, attr, default=None):
         """Retrieves the attr value from the instance of the class, setting default if not exists.
@@ -38,10 +45,7 @@ class User:
 
         return val
 
-    def update_access(self, access_dict):
-        self._access_dict = access_dict
-
-    def hide(self, requires: list = None, match_all: bool = False, **kwargs):
+    def hide(self, requires: list = None, match_all: bool = False, **kwargs) -> bool:
         """Used for click.command(hidden=this.hide) or click.
 
         :param requires: list of roles that a user must have one or more of
@@ -50,7 +54,7 @@ class User:
         """
         return not self.has_access(requires, match_all, **kwargs)
 
-    def has_access(self, requires: list = None, match_all: bool = False, **kwargs):
+    def has_access(self, requires: list = None, match_all: bool = False, **kwargs) -> bool:
         """Overwrite this for custom authorization
 
         Pass in the key space of the roles as kwargs.
@@ -95,11 +99,16 @@ class User:
 
         if requires is None:
             return True
-        elif match_all:
-            return all(authed in requires for authed in auth_list)
-        else:
-            return any(authed in requires for authed in auth_list)
 
-    def authenticate(self, **kwargs):
+        for _, value in access.items():
+            if isinstance(value, list):
+                auth_list += value
+
+        if match_all:
+            return all(authed in auth_list for authed in requires)
+        else:
+            return any(authed in auth_list for authed in requires)
+
+    def authenticate(self, **kwargs) -> dict:
         raise NotImplementedError
 
