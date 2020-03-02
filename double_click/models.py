@@ -36,7 +36,7 @@ class Model:
 
     @property
     def as_dict(self):
-        return self._as_dict
+        return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
 
     @classmethod
     def objects_identifier(cls, **kwargs) -> list:
@@ -45,11 +45,8 @@ class Model:
         :param kwargs:
         :return: list
         """
-        model = cls(**kwargs)
-        content = model._cache_retrieve()
-        if not content:
-            content = model._api_retrieve()
-        return [item.get(model._obj_identifier) for item in content]
+        model = cls.objects_all(as_dict=True, **kwargs)
+        return list(model.keys())
 
     @classmethod
     def objects_all(cls, as_dict: bool = False, **kwargs):
@@ -62,7 +59,7 @@ class Model:
         model = cls(**kwargs)
         content = model._cache_retrieve()
         if not content:
-            content = model._api_retrieve()
+            content = model.refresh()
 
         if as_dict:
             return {item.get(model._obj_identifier): item for item in content}
@@ -92,22 +89,27 @@ class Model:
             setattr(self, attr, default)
         return val
 
-    def _cache_retrieve(self):
+    def _cache_retrieve(self) -> list:
+        """Protected method to retrieve model responses from cache.
+        :return: list(requests.Response)
+        """
         min_age = dt.now() - timedelta(minutes=self._ttl)
         if os.path.exists(self._cache_key) and dt.fromtimestamp(os.path.getmtime(self._cache_key)) < min_age:
             with open(self._cache_key) as config:
                 return json.loads(config.read())
-        else:
-            return []
 
     def _cache_set(self, content):
+        """Called by Model.refresh if _cache_key is not None. Protected method that sets cache content.
+
+        :param content:
+        """
         cache_key = Path(os.path.expanduser(self._cache_key))
         os.makedirs(os.path.dirname(cache_key), exist_ok=True)
         with open(cache_key, 'w') as config:
             config.write(json.dumps(content, indent=2))
 
-    def _api_retrieve(self):
-        """Protected method to retrieve and all Model objects. Used within Model.objects.refresh
+    def _api_retrieve(self) -> list:
+        """Protected method to retrieve and all Model objects from the api.
         :return: list(requests.Response)
         """
         page = 1
