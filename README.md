@@ -20,8 +20,9 @@ Double Click removes the boiler plate of CLIs that primarily communicate with an
         - [ User.has_access ](#user-has-access) 
         - [ User.hide ](#user-hide)
         - [ User.authenticate ](#user-authenticate)
-    - [ double_click.request.GeneralSession ](#general-session)
-    - [ double_click.request.UserSession ](#user-session)
+    - [ double_click.request.GeneralSession ](#generalsession)
+        - [ GeneralSession.bulk_* ](#generalsession-bulk)
+    - [ double_click.request.UserSession ](#usersession)
     - [ double_click.models.ModelAuth ](#modelauth)
     - [ double_click.models.Model ](#model)
         - [ Model.as_dict ](#model-as-dict)
@@ -81,7 +82,7 @@ For example, the way you would auth using permissions is different in these two 
 <br>
 
 <a name="user-get"></a>
-#### `User.get(attr, default=None) -> any`
+#### `User().get(attr, default=None) -> any`
 Retrieves the attr value from the instance of the class, setting default if not exists.
 
 ```python
@@ -104,7 +105,7 @@ google_user.api_key  # Returns ABC
 <br>
 
 <a name="user-has-access"></a>
-#### `User.has_access(requires: list = None, match_all: bool = False, **kwargs) -> bool`
+#### `User().has_access(requires: list = None, match_all: bool = False, **kwargs) -> bool`
 Used to determine if a user has the ability to access a resource based on the provided arguments. 
 For custom auth, override or overload this method.
 
@@ -135,7 +136,7 @@ print(google_user.has_access(requires=['Manager']))  # False
 <br>
 
 <a name="user-hide"></a>
-#### `User.hide(requires: list = None, match_all: bool = False, **kwargs) -> bool`
+#### `User().hide(requires: list = None, match_all: bool = False, **kwargs) -> bool`
 The negation of `User.has_access`. 
 Primarily used for `click.command(hidden=user.hide())` or `click.group(hidden=user.hide())`
 
@@ -161,7 +162,7 @@ print(google_user.hide(requires=['Admin'], service='Photos'))  # True
 <br>
 
 <a name="user-authenticate"></a>
-#### `User.authenticate(**kwargs)`
+#### `User().authenticate(**kwargs)`
 Called by UserSession.refresh_auth authenticate retrieves user token/key/etc. and returns the auth header.
 
 Here is an example of how User.authenticate can be leveraged with a login classmethod and file caching (Mac example).
@@ -260,6 +261,78 @@ class GoogleUser(User):
 <br>
 
 <a name="modelauth"></a>
+
+<a name="generalsession"></a>
+### double_click.request.GeneralSession(*args, **kwargs)
+A base class that inherits from requests.Session with async methods and other features useful when working within a CLI.
+
+Among those changes:
+* bulk_get
+* bulk_put
+* bulk_patch
+* bulk_post
+* bulk_delete
+* `GeneralSession().bulk_*()` requests come with a progress bar out of the box
+* A url validator is done before the request, raising a ValueError if invalid.
+* If `GeneralSession().refresh_auth()` method is overridden session auth is updated when a 401 response is returned
+* GeneralSession catches requests exceptions to provide a consistent process to handle and display errors. 
+  - A Response object is created 
+  - Response()._content = str(exception)
+  - Response().request_kwargs = request_kwargs
+  - Response().status_code = 666
+  - Response().url = url
+  
+
+Optional attributes can be set from the child class definition or when creating the instance:
+- raise_exception = False  # If True, exceptions will raise instead of being mapped to Response object
+- disable_progress_bar = False  # If True, no progress bar will be displayed on async requests
+- progress_bar_color = 'green_3a'  # Change this for a different color on the progress bar
+- max_concurrency = 500  # Sets the max number of requests to run concurrently for any bulk method.
+
+---
+<br>
+
+<a name="generalsession-bulk"></a>
+#### `GeneralSession().bulk_*(request_list: list, loop=asyncio.get_event_loop(), **kwargs) -> list(requests.Response)`
+get, put, patch, post, and delete all have a bulk call. 
+
+The bulk methods take a list of requests and runs them asynchronously. 
+
+`disable_progress_bar` is also supported on the method call e.g. `session.bulk_get(request_list, disable_progress_bar=True)`.
+
+By default bulk methods use asyncio.get_event_loop() but a custom event loop can be passed using loop.
+
+request_list is able to resolve a variety of formats, including the following examples.
+Notice that request kwargs are passed as a dict.
+```python
+from double_click import GeneralSession
+from double_click.request import RequestObject
+
+basic_session = GeneralSession()
+response_list = basic_session.bulk_get(request_list=['https://github.com', 'https://google.com', 'https://pypi.org'])
+response_list = basic_session.bulk_get(request_list=[['https://github.com'], ['https://google.com'], ['https://pypi.org']])
+response_list = basic_session.bulk_get(request_list=[['https://github.com', dict(params=dict(page=1))], ['https://google.com', dict(params=dict(page=1))], ['https://pypi.org', dict(params=dict(page=1))]])
+response_list = basic_session.bulk_get(request_list=[dict(url='https://github.com', params=dict(page=1)), dict(url='https://google.com', params=dict(page=1)), dict(url='https://pypi.org', params=dict(page=1))])
+response_list = basic_session.bulk_get(request_list=[RequestObject(url='https://github.com', request_kwargs=dict(params=dict(page=1))), RequestObject(url='https://google.com', request_kwargs=dict(params=dict(page=1))), RequestObject(url='https://pypi.org', request_kwargs=dict(params=dict(page=1)))])
+```
+
+<a name="usersession"></a>
+### double_click.request.UserSession(*args, **kwargs)
+A base class that inherits from GeneralSession with `double_click.User` integrations.
+The child class definition must include `user`. The `user` value should be of type `double_click.User`
+
+By default, refresh_auth updates the object's headers using the value returned by `user.authenticate`. 
+To override this behavior:
+```python
+from double_click import UserSession
+
+class CustomUserSession(UserSession):
+
+    def refresh_auth(self):
+        # Do something else instead of this:
+        self.headers.update(self.user.authenticate())
+```
+
 ### double_click.models.ModelAuth(requires: list = None, match_all: bool = False, **kwargs)
 Used by `Model` to auth user in `Model.refresh` before making API request.
 > Not a replacement for actual auth on the backend!
@@ -512,8 +585,6 @@ smart_device.alias  # Returns Living Room TV
 <a name="functions"></a>
 ## Helper Functions
 
---- 
-
 <br>
 
 <a name="echo"></a>
@@ -533,11 +604,50 @@ Accepts every commonly used object or structure the echo function can:
 --- 
 <br>
 
+<a name="display-version"></a>
+### `double_click.utils.display_version(package_name: str, md_file: str = 'VERSION.md')`
+Retrieves the md file for the provided package and displays it as markdown in the terminal.
+
+--- 
+<br>
+
+<a name="update-package"></a>
+### `double_click.utils.update_package(package_name: str, force: bool = False, pip_args: list = [])`
+Can be used to expose a command to manually update the package as a command from the CLI.
+
+#### Parameters:  
+  * **force** - (default False) If True, will reinstall the package
+  * **pip_args** - Pass arguments to pip command e.g. `['--extra-index-url', 'https://artifactory.com/api/pypi/simple']`
+
+--- 
+<br>
+
+<a name="ensure-latest-package"></a>
+### `double_click.utils.ensure_latest_package(package_name: str, pip_args: list = [], md_file: str = 'VERSION.md')`
+Checks that the latest version of the CLI is running.
+If not upgrades the package and displays the release note for the latest using the md_file.
+
+--- 
+<br>
+
+<a name="is-valid-url"></a>
+### `double_click.request.is_valid_url(url: str, raises=True) -> bool`
+Uses a regex to check if a URL is valid.
+> requests expects a URL to be prefixed with either http:// or https:// 
+> For this reason, is_valid_url's regex has the same requirement. 
+
+#### Parameters:  
+  * **url**
+  * **raises** If True, the exception is raised. Else, return False if url invalid
+
+--- 
+<br>
+
 <a name="md-table-str"></a>
-#### `double_click.markdown.generate_md_table_str(row_list, headers)`
+### `double_click.markdown.generate_md_table_str(row_list, headers) -> str`
 Creates a markdown table returned as a **str**.
 
-##### Parameters:  
+#### Parameters:  
   * **row_list** - `list(list())` A list with each element representing a row in the table
   * **headers** - `list(str)` List of the column headers
 
@@ -545,20 +655,20 @@ Creates a markdown table returned as a **str**.
 <br>
 
 <a name="md-bullet-str"></a>
-#### `double_click.markdown.generate_md_bullet_str(bullet_list)`
+### `double_click.markdown.generate_md_bullet_str(bullet_list) -> str`
 Creates a markdown bullet list returned as a **str**.
 
-##### Parameters:  
+#### Parameters:  
   * **bullet_list** - `list(str)` List of strings, each string represented as a bullet
 
 --- 
 <br>
 
 <a name="md-code-str"></a>
-#### `double_click.markdown.generate_md_code_str(code_snippet, description)`
+### `double_click.markdown.generate_md_code_str(code_snippet, description) -> str`
 Generates an indentation based code block with a description header with markdown formatting returned as a **str**.
 
-##### Parameters:  
+#### Parameters:  
   * **code_snippet** - `str` Content to display as code
   * **description** - (Optional) `str` Code snippet header. Default: Snippet
 
