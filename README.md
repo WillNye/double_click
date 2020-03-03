@@ -316,6 +316,9 @@ response_list = basic_session.bulk_get(request_list=[dict(url='https://github.co
 response_list = basic_session.bulk_get(request_list=[RequestObject(url='https://github.com', request_kwargs=dict(params=dict(page=1))), RequestObject(url='https://google.com', request_kwargs=dict(params=dict(page=1))), RequestObject(url='https://pypi.org', request_kwargs=dict(params=dict(page=1)))])
 ```
 
+---
+<br>
+
 <a name="usersession"></a>
 ### double_click.request.UserSession(*args, **kwargs)
 A base class that inherits from GeneralSession with `double_click.User` integrations.
@@ -332,6 +335,9 @@ class CustomUserSession(UserSession):
         # Do something else instead of this:
         self.headers.update(self.user.authenticate())
 ```
+
+---
+<br>
 
 ### double_click.models.ModelAuth(requires: list = None, match_all: bool = False, **kwargs)
 Used by `Model` to auth user in `Model.refresh` before making API request.
@@ -551,6 +557,9 @@ class SmartDevice(Model):
         response = self._session.get(self._url)
         return response.json() if response.status_code == 200 else []
 ```
+
+---
+<br>
 
 <a name="model-get"></a>
 #### `Model().get(attr, default=None) -> any`
