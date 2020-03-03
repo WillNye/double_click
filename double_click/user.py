@@ -91,7 +91,9 @@ class User:
             if len(key_hits) == 0:
                 return False
             elif len(key_hits) == 1:
-                access = access[key_hits[0]][kwargs.pop(key_hits[0])]
+                access = access[key_hits[0]].get(kwargs.pop(key_hits[0]))
+                if access is None:
+                    return False
             else:
                 raise ValueError(f'Invalid access structure. {self.username} hit on multiple keys {key_hits}')
 

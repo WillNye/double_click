@@ -132,13 +132,13 @@ class Model:
 
         return results
 
-    def refresh(self):
+    def refresh(self) -> list:
         """Syncs the local file with the service
         """
         if isinstance(self._session, UserSession) and not self._session.user.has_access(requires=self._auth.requires,
                                                                                         match_all=self._auth.match_all,
                                                                                         **self._auth.kwargs):
-            return False
+            return []
 
         content = self._api_retrieve()
         if content and self._cache_key:
