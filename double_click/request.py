@@ -11,7 +11,7 @@ from double_click.user import User
 URL_PATTERN = re.compile('^(http:\/\/|https:\/\/)[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$')
 
 
-def is_valid_url(url, raises=True) -> bool:
+def is_valid_url(url: str, raises=True) -> bool:
     if URL_PATTERN.match(url):
         return True
     elif raises:
