@@ -1,13 +1,11 @@
-aiovast==4.0.3
 certifi==2019.11.28
 chardet==3.0.4
 Click==7.0
 colored==1.4.2
-idna==2.8
+idna==2.9
 Markdown==3.2.1
 mdv==1.7.4
 Pygments==2.5.2
-requests==2.22.0
+requests==2.23.0
 tabulate==0.8.6
 tqdm==4.43.0
-urllib3==1.25.8

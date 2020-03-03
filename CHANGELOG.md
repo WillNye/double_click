@@ -1,6 +1,20 @@
 # Change Log
 
 ---
+# 0.2.5 (2020/03/03)
+
+### Bug Fixes
+* Bug fixes for User.has_access and User.hide
+* UserSession.refresh_auth fixed to use user.authenticate() response
+
+
+### Features
+* Added a ModelAuth class
+* Improved documentation
+* Refactor of Model and its attribute naming
+
+
+---
 # 0.1.0 (2020/02/28)
 
 ### Bug Fixes

@@ -11,7 +11,7 @@ from double_click.user import User
 URL_PATTERN = re.compile('^(http:\/\/|https:\/\/)[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$')
 
 
-def is_valid_url(url, raises=True) -> bool:
+def is_valid_url(url: str, raises=True) -> bool:
     if URL_PATTERN.match(url):
         return True
     elif raises:
@@ -82,7 +82,7 @@ class GeneralSession(requests.Session):
 
         :return:
         """
-        pass
+        raise NotImplementedError
 
     def _make_request(self, request_call, url, retry=True, **request_kwargs) -> requests.Response:
         """Makes an http request, suppress errors and include content.
@@ -93,9 +93,12 @@ class GeneralSession(requests.Session):
         try:
             response = request_call(url, **request_kwargs)
             if response.status_code == 401:  # Fingers crossed the API has proper status codes
-                self.refresh_auth()
-                if retry:
-                    return self._make_request(request_call, url, retry=False, **request_kwargs)
+                try:
+                    self.refresh_auth()
+                    if retry:
+                        return self._make_request(request_call, url, retry=False, **request_kwargs)
+                except NotImplementedError:
+                    return response
 
             return response
 
@@ -105,8 +108,9 @@ class GeneralSession(requests.Session):
             else:
                 response = requests.Response()
                 response.url = url
-                response._content = str(e).encode('utf-8')
                 response.status_code = 666
+                response.request_kwargs = request_kwargs
+                response._content = str(e).encode('utf-8')
                 return response
 
     def _bulk(self, call, request_list: list, loop=asyncio.get_event_loop(), **kwargs) -> list:
@@ -133,7 +137,7 @@ class GeneralSession(requests.Session):
 
                 return [await f for f in tqdm(asyncio.as_completed(futures),
                                               total=len(futures),
-                                              disable=kwargs.get('disable_progress', False),
+                                              disable=kwargs.get('disable_progress_bar', self.disable_progress_bar),
                                               bar_format=bar_format)]
 
         concurrency = min(len(request_list), kwargs.get('max_concurrency', self.max_concurrency))
@@ -190,9 +194,7 @@ class UserSession(GeneralSession):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', self.user)
-        kwargs['disable_progress_bar'] = kwargs.get('disable_progress_bar', False)
-
         super().__init__(*args, **kwargs)
 
     def refresh_auth(self):
-        self.user.authenticate()
+        self.headers.update(self.user.authenticate())
