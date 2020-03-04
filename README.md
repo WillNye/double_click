@@ -162,8 +162,8 @@ print(google_user.hide(requires=['Admin'], service='Photos'))  # True
 <br>
 
 <a name="user-authenticate"></a>
-#### `User().authenticate(**kwargs)`
-Called by UserSession.refresh_auth authenticate retrieves user token/key/etc. and returns the auth header.
+#### `User().authenticate(**kwargs) -> dict(session_header)`
+Called by UserSession.refresh_auth, authenticate retrieves user token/key/etc. and returns the auth header.
 
 Here is an example of how User.authenticate can be leveraged with a login classmethod and file caching (Mac example).
 On login, a check is done to validate PROFILE_DIR exists. If it does and the token is valid, set the cls obj and return it.
@@ -394,7 +394,7 @@ Property that returns the dict representation of a Model instance.
 <br>
 
 <a name="model-objects-all"></a>
-#### `Model.objects_all(as_dict: bool = False, **kwargs) -> list`
+#### `Model.objects_all(as_dict: bool = False, **kwargs) -> list(Model)`
 If as_dict is False, returns list of the Model objects, otherwise a list of dict(obj_identifier=obj_as_dict).
 
 ```python
@@ -534,7 +534,7 @@ class SmartDevice(Model):
 <br>
 
 <a name="model-api-retrieve"></a>
-#### `Model()._api_retrieve() -> list`
+#### `Model()._api_retrieve() -> list(requests.Response)`
 The _api_get method is responsible for making the http request and returning its response.
 
 The default behavior expects a list response from the API with the following keys:
@@ -597,7 +597,7 @@ smart_device.alias  # Returns Living Room TV
 <br>
 
 <a name="echo"></a>
-### `double_click.utils.echo(output)`
+#### `double_click.utils.echo(output)`
 Formats and displays the provided output.
 
 Accepts every commonly used object or structure the echo function can:
@@ -607,24 +607,24 @@ Accepts every commonly used object or structure the echo function can:
 * Display a string as markdown in the CLI `if str.startswith('#')`
 * Display all other as the output's `__repr__` value
 
-#### Parameters:  
+##### Parameters:  
   * **output** - `list(dict()) or dict() or Response or md str or output's __repr__ value` Content to print to CLI
 
 --- 
 <br>
 
 <a name="display-version"></a>
-### `double_click.utils.display_version(package_name: str, md_file: str = 'VERSION.md')`
+#### `double_click.utils.display_version(package_name: str, md_file: str = 'VERSION.md')`
 Retrieves the md file for the provided package and displays it as markdown in the terminal.
 
 --- 
 <br>
 
 <a name="update-package"></a>
-### `double_click.utils.update_package(package_name: str, force: bool = False, pip_args: list = [])`
+#### `double_click.utils.update_package(package_name: str, force: bool = False, pip_args: list = [])`
 Can be used to expose a command to manually update the package as a command from the CLI.
 
-#### Parameters:  
+##### Parameters:  
   * **force** - (default False) If True, will reinstall the package
   * **pip_args** - Pass arguments to pip command e.g. `['--extra-index-url', 'https://artifactory.com/api/pypi/simple']`
 
@@ -632,7 +632,7 @@ Can be used to expose a command to manually update the package as a command from
 <br>
 
 <a name="ensure-latest-package"></a>
-### `double_click.utils.ensure_latest_package(package_name: str, pip_args: list = [], md_file: str = 'VERSION.md')`
+#### `double_click.utils.ensure_latest_package(package_name: str, pip_args: list = [], md_file: str = 'VERSION.md')`
 Checks that the latest version of the CLI is running.
 If not upgrades the package and displays the release note for the latest using the md_file.
 
@@ -640,12 +640,12 @@ If not upgrades the package and displays the release note for the latest using t
 <br>
 
 <a name="is-valid-url"></a>
-### `double_click.request.is_valid_url(url: str, raises=True) -> bool`
+#### `double_click.request.is_valid_url(url: str, raises=True) -> bool`
 Uses a regex to check if a URL is valid.
 > requests expects a URL to be prefixed with either http:// or https:// 
 > For this reason, is_valid_url's regex has the same requirement. 
 
-#### Parameters:  
+##### Parameters:  
   * **url**
   * **raises** If True, the exception is raised. Else, return False if url invalid
 
@@ -653,10 +653,10 @@ Uses a regex to check if a URL is valid.
 <br>
 
 <a name="md-table-str"></a>
-### `double_click.markdown.generate_md_table_str(row_list, headers) -> str`
+#### `double_click.markdown.generate_md_table_str(row_list, headers) -> str`
 Creates a markdown table returned as a **str**.
 
-#### Parameters:  
+##### Parameters:  
   * **row_list** - `list(list())` A list with each element representing a row in the table
   * **headers** - `list(str)` List of the column headers
 
@@ -664,20 +664,20 @@ Creates a markdown table returned as a **str**.
 <br>
 
 <a name="md-bullet-str"></a>
-### `double_click.markdown.generate_md_bullet_str(bullet_list) -> str`
+#### `double_click.markdown.generate_md_bullet_str(bullet_list) -> str`
 Creates a markdown bullet list returned as a **str**.
 
-#### Parameters:  
+##### Parameters:  
   * **bullet_list** - `list(str)` List of strings, each string represented as a bullet
 
 --- 
 <br>
 
 <a name="md-code-str"></a>
-### `double_click.markdown.generate_md_code_str(code_snippet, description) -> str`
+#### `double_click.markdown.generate_md_code_str(code_snippet, description) -> str`
 Generates an indentation based code block with a description header with markdown formatting returned as a **str**.
 
-#### Parameters:  
+##### Parameters:  
   * **code_snippet** - `str` Content to display as code
   * **description** - (Optional) `str` Code snippet header. Default: Snippet
 

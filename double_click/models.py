@@ -109,7 +109,7 @@ class Model:
             config.write(json.dumps(content, indent=2))
 
     def _api_retrieve(self) -> list:
-        """Protected method to retrieve and all Model objects from the api.
+        """Protected method that retrieves all Model objects from the api.
         :return: list(requests.Response)
         """
         page = 1
