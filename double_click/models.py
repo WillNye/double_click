@@ -94,8 +94,9 @@ class Model:
         :return: list(requests.Response)
         """
         min_age = dt.now() - timedelta(minutes=self._ttl)
-        if os.path.exists(self._cache_key) and dt.fromtimestamp(os.path.getmtime(self._cache_key)) < min_age:
-            with open(self._cache_key) as config:
+        cache_key = Path(os.path.expanduser(self._cache_key))
+        if os.path.exists(cache_key) and dt.fromtimestamp(os.path.getmtime(cache_key)) < min_age:
+            with open(cache_key) as config:
                 return json.loads(config.read())
 
     def _cache_set(self, content):
