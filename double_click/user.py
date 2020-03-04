@@ -40,7 +40,7 @@ class User:
         :return: self.attr
         """
         val = getattr(self, attr, default)
-        if val == default and default is None:
+        if val == default and default is not None:
             setattr(self, attr, default)
 
         return val
@@ -62,21 +62,6 @@ class User:
             note: The preceding key must be passed
                     so if user permissions look like dict(service=dict(svc_name=dict(list(roles), list(permissions))))
                     the service name must be provided when passing a list of permissions, not just the permissions.
-
-        For example, if permissions dict looks like service=dict(svc_name=dict(list(roles), list(permissions))))
-            Valid:
-                user.has_access()
-                user.has_access(requires=['service1'])
-                user.has_access(requires=['employee', 'manager'], service=service1)
-                user.has_access(requires=['add_user', 'update_user'], match_all = True, service=service1)
-
-                OR in the case of service=dict(svc_name=dict(role=dict(role_name=list(permissions)))))
-                    user.has_access(requires=['add_user'], service=service1, role=employee)
-            Invalid:
-                user.has_access(requires=['employee', 'manager'])
-
-                OR in the case of service=dict(svc_name=dict(role=dict(role_name=list(permissions))))
-                    user.has_access(requires=['add_user'], service=service1)
 
         :param requires: list of roles that a user must have one or more of represented
         :param match_all: (default: False) If true a user must have all roles passed in required_roles
