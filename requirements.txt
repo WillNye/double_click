@@ -1,6 +1,5 @@
 certifi==2019.11.28
 chardet==3.0.4
-Click==7.0
 colored==1.4.2
 idna==2.9
 Markdown==3.2.1
