@@ -1,6 +1,14 @@
 # Change Log
 
 ---
+# 0.2.7 (2020/03/04)
+
+### Bug Fixes
+* Cleaned up doc typos
+### Features
+* None
+
+---
 # 0.2.6 (2020/03/03)
 
 ### Bug Fixes
