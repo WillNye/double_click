@@ -1,12 +1,12 @@
 # Double Click
-> API centric CLIs made easy using Click and Python3.7+
+> API centric CLIs made easy using requests and Python3.7+
 
 ### Why use Double Click?
-Double Click removes the boiler plate of CLIs that primarily communicate with an API by adding features to integrate with Click like:
+Double Click removes the boiler plate of CLIs that primarily communicate with an API by adding features like:
 * User permissions - Hide command if user doesn't have access
 * HTTP Session management - refresh auth during long running async operations
 * HTTP Sessions tied to a user - Allows for things like `all_roles = {**google_session.user.access, **duo_session.user.access`
-* Use HTTP response for click.Choices instead of hard coded values that may not be viable e.g. users
+* Use HTTP response for command choices (e.g. click.Choice) instead of hard coded values that may not be viable e.g. users
 * Normalizing a requests.Response object to a human readable value
 * Catching exceptions during async http requests and normalizing to a human readable value
 * Displaying complex structures like a bullet list, table, or code snippets in the terminal.

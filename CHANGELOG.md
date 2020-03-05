@@ -1,6 +1,17 @@
 # Change Log
 
 ---
+
+# 0.2.8 (2020/03/05)
+
+### Bug Fixes
+* Catching import inconsistency for get_python_lib
+### Features
+* Removed Click dependency to expand potential use-cases
+* Improved Windows support
+
+---
+
 # 0.2.7 (2020/03/04)
 
 ### Bug Fixes
@@ -9,6 +20,7 @@
 * None
 
 ---
+
 # 0.2.6 (2020/03/03)
 
 ### Bug Fixes
