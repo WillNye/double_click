@@ -3,9 +3,13 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from distutils import sysconfig_get_python_lib
 
-import click
+try:
+    from distutils import sysconfig_get_python_lib as get_python_lib
+except ImportError:
+    # There doesn't seem to be any consistency on this import so have to handle both import types.
+    from distutils.sysconfig import get_python_lib
+
 from mdv.markdownviewer import main as mdv
 from requests import Response
 
@@ -20,37 +24,37 @@ def echo(output):
     """
     if isinstance(output, dict) or isinstance(output, list):
         try:
-            click.echo(json.dumps(output, indent=2))
+            print(json.dumps(output, indent=2))
         except (TypeError, ValueError):
-            click.echo(str(output))
+            print(str(output))
     elif isinstance(output, Response):
         if output.status_code is None:
             err = f"#Server Error \n" \
                 f"> {output.url} - {output.text}"
-            click.echo(mdv(md=err, theme=CLI_THEME, c_theme=CLI_THEME))
+            print(mdv(md=err, theme=CLI_THEME, c_theme=CLI_THEME))
         elif output.status_code in [200, 201]:
             try:
-                click.echo(json.dumps(output.json(), indent=4))
+                print(json.dumps(output.json(), indent=4))
             except json.decoder.JSONDecodeError:
-                click.echo(output.text)
+                print(output.text)
         elif output.status_code in [401, 403]:
-            click.echo(mdv(md="#You do not have permissions to view this resource", theme=CLI_THEME, c_theme=CLI_THEME))
+            print(mdv(md="#You do not have permissions to view this resource", theme=CLI_THEME, c_theme=CLI_THEME))
         elif output.status_code == 404:
-            click.echo(mdv(md="#Unable to find the requested resource", theme=CLI_THEME, c_theme=CLI_THEME))
+            print(mdv(md="#Unable to find the requested resource", theme=CLI_THEME, c_theme=CLI_THEME))
         elif output.status_code >= 500:
             err = f"#Server Error \n" \
                 f"> {output.url} - {output.status_code} - {output.text}"
-            click.echo(mdv(md=err, theme=CLI_THEME, c_theme=CLI_THEME))
+            print(mdv(md=err, theme=CLI_THEME, c_theme=CLI_THEME))
         else:
-            click.echo(output.text)
+            print(output.text)
     elif isinstance(output, str) and output.startswith('#'):
-        click.echo(mdv(md=output, theme=CLI_THEME, c_theme=CLI_THEME))
+        print(mdv(md=output, theme=CLI_THEME, c_theme=CLI_THEME))
     else:
-        click.echo(str(output))
+        print(str(output))
 
 
 def display_version(package_name: str, md_file: str = 'VERSION.md'):
-    md_path = Path(os.path.join(os.path.join(sysconfig_get_python_lib(), package_name), md_file))
+    md_path = Path(os.path.join(os.path.join(get_python_lib(), package_name), md_file))
     if os.path.exists(md_path):
         echo(mdv(filename=md_path))
     else:

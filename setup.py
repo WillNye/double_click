@@ -5,7 +5,7 @@ with open('README.md', 'r') as long_desc:
 
 setup(
     name='double_click',
-    version='0.2.7',
+    version='0.2.8',
     description='Helper framework to augment Click.',
     long_description='Helper framework to augment Click.',
     url='https://github.com/WillNye/double_click',
@@ -13,7 +13,6 @@ setup(
     install_requires=[
         'certifi==2019.11.28',
         'chardet==3.0.4',
-        'Click==7.0',
         'colored==1.4.2',
         'idna==2.9',
         'Markdown==3.2.1',
