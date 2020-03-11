@@ -2,6 +2,15 @@
 
 ---
 
+# 0.2.9 (2020/03/11)
+
+### Bug Fixes
+* ensure_latest_package now supports dedicated kwarg for passing pip args to update_package
+### Features
+* None
+
+---
+
 # 0.2.8 (2020/03/05)
 
 ### Bug Fixes

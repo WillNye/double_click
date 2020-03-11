@@ -88,7 +88,7 @@ def update_package(package_name: str, force: bool = False, pip_args: list = []):
     return proc.stdout.read().decode('utf-8')
 
 
-def ensure_latest_package(package_name: str, pip_args: list = [], md_file: str = 'VERSION.md'):
+def ensure_latest_package(package_name: str, pip_args=[], md_file: str = 'VERSION.md', update_pkg_pip_args=[]):
     """Toss this in main to perform a check that the user is always running latest
 
     pip_args will be passed as a list to add things like trusted-host or extra-index-url.
@@ -99,7 +99,8 @@ def ensure_latest_package(package_name: str, pip_args: list = [], md_file: str =
 
     :param package_name:
     :param pip_args:
-    :param md_file:
+    :param md_file: Display this file if the package was updated
+    :param update_pkg_pip_args: pip args pass to update_package on out of date package e.g. --extra-index-url
     :return:
     """
     proc = subprocess.Popen(
@@ -112,7 +113,8 @@ def ensure_latest_package(package_name: str, pip_args: list = [], md_file: str =
         latest_version = [info.replace('LATEST:', '') for info in version_info if 'LATEST' in info]
 
         if len(latest_version) > 0 and install_version != latest_version:
-            update_package(package_name, pip_args=pip_args)
+            update_pkg_pip_args = update_pkg_pip_args if update_pkg_pip_args else pip_args
+            update_package(package_name, pip_args=update_pkg_pip_args)
             display_version(package_name, md_file)
             echo('An update was retrieved that prevented your command from running.')
             echo('Please review changes and re-run your command.')
