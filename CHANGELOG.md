@@ -2,6 +2,15 @@
 
 ---
 
+# 0.2.12 (2020/04/08)
+
+### Bug Fixes
+* Improved output in ensure_latest_package
+### Features
+* None
+
+---
+
 # 0.2.11 (2020/04/08)
 
 ### Bug Fixes

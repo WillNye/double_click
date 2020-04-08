@@ -116,6 +116,6 @@ def ensure_latest_package(package_name: str, pip_args=[], md_file: str = 'VERSIO
             update_pkg_pip_args = update_pkg_pip_args if update_pkg_pip_args else pip_args
             update_package(package_name, pip_args=update_pkg_pip_args)
             display_version(package_name, md_file)
-            echo('An update was retrieved that prevented your command from running.')
+            echo(f'An update to {package_name} was retrieved that prevented your command from running.')
             echo('Please review changes and re-run your command.')
             sys.exit(0)
