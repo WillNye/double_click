@@ -75,7 +75,7 @@ class Model:
         :return: cls
         """
         model_dict = cls.objects_all(as_dict=True)
-        return cls(**{**model_dict.get(key), **kwargs})
+        return cls(**{**model_dict.get(key, {}), **kwargs})
 
     def get(self, attr, default=None):
         """Perform a safe lookup on an instance of the Model with the ability to provide a default if attr not set.
