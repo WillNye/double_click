@@ -57,8 +57,6 @@ def display_version(package_name: str, md_file: str = 'VERSION.md'):
     md_path = Path(os.path.join(os.path.join(get_python_lib(), package_name), md_file))
     if os.path.exists(md_path):
         echo(mdv(filename=md_path))
-    else:
-        echo("#Unable to find version info.")
 
 
 def update_package(package_name: str, force: bool = False, pip_args: list = []):
@@ -105,17 +103,12 @@ def ensure_latest_package(package_name: str, pip_args=[], md_file: str = 'VERSIO
     """
     proc = subprocess.Popen(
         ['pip3', 'search', package_name] + pip_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output = proc.stdout.read().decode('utf-8')
+    output = proc.stdout.read().decode('utf-8').replace(' ', '').split('\n')
 
-    if 'INSTALLED' in output:
-        version_info = output.replace(' ', '').split('\n')
-        install_version = [info.replace('INSTALLED:', '') for info in version_info if 'INSTALLED' in info]
-        latest_version = [info.replace('LATEST:', '') for info in version_info if 'LATEST' in info]
-
-        if len(latest_version) > 0 and install_version != latest_version:
-            update_pkg_pip_args = update_pkg_pip_args if update_pkg_pip_args else pip_args
-            update_package(package_name, pip_args=update_pkg_pip_args)
-            display_version(package_name, md_file)
-            echo(f'An update to {package_name} was retrieved that prevented your command from running.')
-            echo('Please review changes and re-run your command.')
-            sys.exit(0)
+    if len(output) > 1 and 'INSTALLED' in output[1] and 'latest' not in output[1]:
+        update_pkg_pip_args = update_pkg_pip_args if update_pkg_pip_args else pip_args
+        update_package(package_name, pip_args=update_pkg_pip_args)
+        display_version(package_name, md_file)
+        echo(f'#An update to {package_name} was retrieved that prevented your command from running.'
+             f'\nPlease review changes and re-run your command.')
+        sys.exit(0)

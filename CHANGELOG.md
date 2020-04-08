@@ -2,10 +2,11 @@
 
 ---
 
-# 0.2.12 (2020/04/08)
+# 0.2.13 (2020/04/08)
 
 ### Bug Fixes
 * Improved output in ensure_latest_package
+* Accounting for multiple packages to be returned on pip3 search in ensure_latest_package
 ### Features
 * None
 

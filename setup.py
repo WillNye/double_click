@@ -5,13 +5,12 @@ with open('README.md', 'r') as long_desc:
 
 setup(
     name='double_click',
-    version='0.2.12',
+    version='0.2.13',
     description='Helper framework to augment Click.',
     long_description='Helper framework to augment Click.',
     url='https://github.com/WillNye/double_click',
     python_requires='>=3.7',
     install_requires=[
-        'certifi==2019.11.28',
         'chardet==3.0.4',
         'colored==1.4.2',
         'idna==2.9',
@@ -20,7 +19,7 @@ setup(
         'Pygments==2.5.2',
         'requests<3.0.0',
         'tabulate==0.8.6',
-        'tqdm==4.43.0',
+        'tqdm<5.0.0',
     ],
     packages=find_namespace_packages(include=['double_click', 'double_click.*']),
     package_data={'': ['*.md']},
