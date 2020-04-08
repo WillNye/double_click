@@ -2,6 +2,24 @@
 
 ---
 
+# 0.2.11 (2020/04/08)
+
+### Bug Fixes
+* Properly accounting for key miss in Model.objects_get 
+### Features
+* None
+
+---
+
+# 0.2.10 (2020/04/02)
+
+### Bug Fixes
+* Set a default terminal size if running in supervisor
+### Features
+* None
+
+---
+
 # 0.2.9 (2020/03/11)
 
 ### Bug Fixes
