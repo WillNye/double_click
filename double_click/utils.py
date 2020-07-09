@@ -1,7 +1,12 @@
 import json
 import os
+import pkg_resources
+import re
 import subprocess
 import sys
+from configparser import ConfigParser
+from dateutil.parser import parse as date_parse
+from datetime import datetime as dt, timedelta
 from pathlib import Path
 
 try:
@@ -14,6 +19,26 @@ from mdv.markdownviewer import main as mdv
 from requests import Response
 
 CLI_THEME = float(os.getenv('CLI_THEME', 1057.4342))
+
+
+class Config(ConfigParser):
+    def __init__(self, config_path, *args, **kwargs):
+        self._config_path = Path(os.path.expanduser(config_path))
+
+        if not os.path.exists(self._config_path):
+            path_as_list = str(self._config_path).split('/')
+            os.makedirs(Path("/".join(path_as_list[:-1])), exist_ok=True)
+
+        super(ConfigParser, self).__init__(*args, **kwargs)
+        self.read(self.path)
+
+    @property
+    def path(self):
+        return self._config_path
+
+    def save(self):
+        with open(self._config_path, 'w') as fout:
+            self.write(fout)
 
 
 def echo(output):
@@ -82,8 +107,9 @@ def update_package(package_name: str, force: bool = False, pip_args: list = []):
     proc = subprocess.Popen(
         ['pip3', 'install', '--upgrade', package_name] + pip_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-
-    return proc.stdout.read().decode('utf-8')
+    stdout = proc.stdout.read().decode('utf-8')
+    stderr = proc.stderr.read().decode('utf-8')
+    return f"{stdout}\n{stderr}" if stdout else stderr
 
 
 def ensure_latest_package(package_name: str, pip_args=[], md_file: str = 'VERSION.md', update_pkg_pip_args=[]):
@@ -101,14 +127,39 @@ def ensure_latest_package(package_name: str, pip_args=[], md_file: str = 'VERSIO
     :param update_pkg_pip_args: pip args pass to update_package on out of date package e.g. --extra-index-url
     :return:
     """
-    proc = subprocess.Popen(
-        ['pip3', 'search', package_name] + pip_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output = proc.stdout.read().decode('utf-8').replace(' ', '').split('\n')
+    config = Config('~/.double_click/package_versions.ini')
 
-    if len(output) > 1 and 'INSTALLED' in output[1] and 'latest' not in output[1]:
-        update_pkg_pip_args = update_pkg_pip_args if update_pkg_pip_args else pip_args
-        update_package(package_name, pip_args=update_pkg_pip_args)
-        display_version(package_name, md_file)
-        echo(f'#An update to {package_name} was retrieved that prevented your command from running.'
-             f'\nPlease review changes and re-run your command.')
-        sys.exit(0)
+    if not config.has_section(package_name):
+        config.add_section(package_name)
+        last_checked = None
+    else:
+        last_checked = config.get(package_name, 'last_checked')
+
+    if not last_checked or date_parse(last_checked) < dt.utcnow() - timedelta(hours=1):
+        try:
+            latest_version = None
+            current_version = pkg_resources.get_distribution(package_name).version
+            version_output = update_package(f'{package_name}==DoesNotExist', pip_args=update_pkg_pip_args)
+            version_output = [line for line in version_output.split('\n') if 'DoesNotExist (from versions:' in line]
+            if version_output:
+                versions = re.findall(r'([0-9][^,)]+)', version_output[0])
+                latest_version = versions[-1]
+
+            if latest_version and current_version != latest_version:
+                update_pkg_pip_args = update_pkg_pip_args if update_pkg_pip_args else pip_args
+                update_package(package_name, pip_args=update_pkg_pip_args)
+                config.set(package_name, 'last_checked', str(dt.utcnow()))
+                update_msg = f'#An update to {package_name} was retrieved that prevented your command from running.'
+                if md_file:
+                    display_version(package_name, md_file)
+                    update_msg += f'\nPlease review changes and re-run your command.'
+                else:
+                    update_msg += f'\nPlease re-run your command.'
+                echo(update_msg)
+                sys.exit(0)
+        except pkg_resources.DistributionNotFound:
+            # This should only occur during testing
+            echo(f'{package_name} not found')
+
+        config.set(package_name, 'last_checked', str(dt.utcnow()))
+        config.save()
