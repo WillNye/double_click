@@ -2,6 +2,16 @@
 
 ---
 
+# 0.2.14 (2020/07/09)
+
+### Bug Fixes
+* Updated requirements
+* Rewrite of ensure_latest_package to improve resolving versions and only checking for update once an hour now 
+### Features
+* None
+
+---
+
 # 0.2.13 (2020/04/08)
 
 ### Bug Fixes
