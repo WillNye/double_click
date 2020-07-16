@@ -1,15 +1,18 @@
 import asyncio
 import re
 import concurrent.futures
+import sys
 
 import requests
 from colored import fg, style
 from tqdm import tqdm
+from typing import NewType
 
 from double_click.user import User
 
 URL_PATTERN = re.compile('^(http:\/\/|https:\/\/)[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$')
-
+Eventloop = NewType('Eventloop', asyncio.windows_events._WindowsSelectorEventLoop) \
+        if sys.platform == 'win32' else NewType('Eventloop', asyncio.unix_events._UnixSelectorEventLoop)
 
 def is_valid_url(url: str, raises=True) -> bool:
     if URL_PATTERN.match(url):
@@ -113,7 +116,7 @@ class GeneralSession(requests.Session):
                 response._content = str(e).encode('utf-8')
                 return response
 
-    def _bulk(self, call, request_list: list, loop=asyncio.get_event_loop(), **kwargs) -> list:
+    def _bulk(self, call, request_list: list, loop: Eventloop = None, **kwargs) -> list:
         """Makes multiple GET requests in a ThreadPoolExecutor.
 
         :param request_list: list(dict(url, params-optional, data-optional, stream-optional)).
@@ -139,7 +142,9 @@ class GeneralSession(requests.Session):
                                               total=len(futures),
                                               disable=kwargs.get('disable_progress_bar', self.disable_progress_bar),
                                               bar_format=bar_format)]
-
+        if loop is None:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         concurrency = min(len(request_list), kwargs.get('max_concurrency', self.max_concurrency))
         return loop.run_until_complete(request_pool(concurrency))
 
@@ -173,19 +178,19 @@ class GeneralSession(requests.Session):
             kwargs = request_object.request_kwargs
         return self._make_request(super().delete, url, **kwargs)
 
-    def bulk_get(self, request_list: list, loop=asyncio.get_event_loop(), **kwargs):
+    def bulk_get(self, request_list: list, loop: Eventloop = None, **kwargs):
         return self._bulk(self.get, request_list, loop, **kwargs)
 
-    def bulk_put(self, request_list: list, loop=asyncio.get_event_loop(), **kwargs):
+    def bulk_put(self, request_list: list, loop: Eventloop = None, **kwargs):
         return self._bulk(self.put, request_list, loop, **kwargs)
 
-    def bulk_patch(self, request_list: list, loop=asyncio.get_event_loop(), **kwargs):
+    def bulk_patch(self, request_list: list, loop: Eventloop = None, **kwargs):
         return self._bulk(self.patch, request_list, loop, **kwargs)
 
-    def bulk_post(self, request_list: list, loop=asyncio.get_event_loop(), **kwargs):
+    def bulk_post(self, request_list: list, loop: Eventloop = None, **kwargs):
         return self._bulk(self.post, request_list, loop, **kwargs)
 
-    def bulk_delete(self, request_list: list, loop=asyncio.get_event_loop(), **kwargs):
+    def bulk_delete(self, request_list: list, loop: Eventloop = None, **kwargs):
         return self._bulk(self.delete, request_list, loop, **kwargs)
 
 
