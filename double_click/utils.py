@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import pkg_resources
@@ -7,6 +8,7 @@ import sys
 from configparser import ConfigParser
 from dateutil.parser import parse as date_parse
 from datetime import datetime as dt, timedelta
+from typing import NewType
 from pathlib import Path
 
 try:
@@ -19,6 +21,18 @@ from mdv.markdownviewer import main as mdv
 from requests import Response
 
 CLI_THEME = float(os.getenv('CLI_THEME', 1057.4342))
+URL_PATTERN = re.compile('^(http:\/\/|https:\/\/)[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$')
+EventLoop = NewType('Eventloop', asyncio.windows_events._WindowsSelectorEventLoop) \
+        if sys.platform == 'win32' else NewType('Eventloop', asyncio.unix_events._UnixSelectorEventLoop)
+
+
+def is_valid_url(url: str, raises=True) -> bool:
+    if URL_PATTERN.match(url):
+        return True
+    elif raises:
+        raise ValueError(f'Invalid URL {url}')
+    else:
+        return False
 
 
 class Config(ConfigParser):
