@@ -5,7 +5,7 @@ with open('requirements.txt', 'r') as f:
 
 setup(
     name='double_click',
-    version='0.2.14',
+    version='0.2.15',
     description='Helper framework to augment Click.',
     long_description='Helper framework to augment Click.',
     url='https://github.com/WillNye/double_click',

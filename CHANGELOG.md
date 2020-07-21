@@ -2,6 +2,15 @@
 
 ---
 
+# 0.2.15 (2020/07/21)
+
+### Bug Fixes
+* Lazy load the ioloop call to prevent RuntimeError when running in certain context
+### Features
+* New NumericOption click class
+
+---
+
 # 0.2.14 (2020/07/09)
 
 ### Bug Fixes
