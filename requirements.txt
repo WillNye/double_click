@@ -1,4 +1,5 @@
 chardet<4.0.0
+Click<8.0,>=7.1.1
 colored<2.0.0
 idna<3.0
 Markdown<4.0.0
