@@ -2,6 +2,15 @@
 
 ---
 
+# 0.2.16 (2020/11/16)
+
+### Bug Fixes
+* Update MDV package to `mdv3` for python3.9+ support
+### Features
+* None
+
+---
+
 # 0.2.15 (2020/07/21)
 
 ### Bug Fixes
