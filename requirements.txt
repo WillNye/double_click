@@ -3,7 +3,7 @@ Click<8.0,>=7.1.1
 colored<2.0.0
 idna<3.0
 Markdown<4.0.0
-mdv<2.0.0
+mdv3<3.0.0,>=2.0.0
 Pygments<3.0.0
 pytest<6.0.0
 pytest-cov<3.0.0
